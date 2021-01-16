@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .head{
+            background-color: yellow;
+            text-align: center;
+        }
+    </style>
+</head>
+<script>
+    const socket = new WebSocket("ws://" + document.domain + ':' + location.port, "ws-protocol-example");
+
+    function update(msg,flag) {
+        console.log(msg);
+        const div_content = document.getElementById("num").innerHTML;
+        if (flag === 1) {
+            const time = msg.split("\n")[0];
+            const data = msg.split('\n')[1];
+            document.getElementById("num").innerHTML = div_content + time + "</br>" + data + "</br>";
+        }
+        else if (flag ===0){
+            document.getElementById("num").innerHTML = div_content + msg + "</br>";
+        }
+    }
+ socket.onopen = function() { 
+     console.log("socket open"); 
+     update("open " + document.domain + ':' + location.port,0);
+ }
+ socket.onclose = function() { 
+     console.log("socket close");
+     update("close " + document.domain + ':' + location.port,0)
+ }
+ socket.onmessage = function(msg) {
+      console.log("socket message: " + msg.data); 
+      update(msg.data,1);
+}
+</script>
+<body>
+<div class = "head">Welcome to Websocket-Base Chatting APP</div>
+<p id="num"></p>
+</body>
+</html>
