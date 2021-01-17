@@ -101,6 +101,10 @@ void* read_input (void* vargp) {
     printf("Please type your message in here\n ");
     while ((nread = getline(&line, &len, stdin)) != -1) {
         line[nread - 1] = '\0';
+        if(strlen(line) > EXAMPLE_RX_BUFFER_BYTES){
+            printf("Don't send message larger than %d and type again\n",EXAMPLE_RX_BUFFER_BYTES);
+            continue;
+        }
         char tmp[EXAMPLE_RX_BUFFER_BYTES + 65] = {0};
         strcpy(tmp,current_time());
         strcat(tmp,complete);

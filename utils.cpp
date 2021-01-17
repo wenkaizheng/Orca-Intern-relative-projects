@@ -48,16 +48,20 @@ static void receive_callback_output(int type, payload * received_payload, size_t
 
 // if it is not one time transfer, we will handle it multiple time instead of onetime
 int receive_callback(struct lws *wsi, payload * received_payload, void* in, size_t len, int type, int fd ) {
+    if (lws_is_first_fragment(wsi) && lws_is_final_fragment(wsi)){
+        memcpy(&(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]), in, len);
+        received_payload->len = len;
+        received_payload->data[LWS_SEND_BUFFER_PRE_PADDING + received_payload->len] = '\0';
+        receive_callback_output(type, received_payload, len, fd);
+        return 1;
+    }
     if (lws_is_first_fragment(wsi) && !lws_is_final_fragment(wsi) && type) {
-        fprintf(stderr, "buffer data size is %ld byte and it exceeds max length 5120\n",5120 + lws_remaining_packet_payload(wsi));
+        fprintf(stderr, "Buffer data size is %ld byte and it exceeds max length %d\n",
+                EXAMPLE_RX_BUFFER_BYTES + lws_remaining_packet_payload(wsi),EXAMPLE_RX_BUFFER_BYTES);
         return 0;
     }
+    return 0;
 
-    memcpy(&(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]), in, len);
-    received_payload->len = len;
-    received_payload->data[LWS_SEND_BUFFER_PRE_PADDING + received_payload->len] = '\0';
-    receive_callback_output(type, received_payload, len, fd);
-        return 1;
 }
 
 int compare_op(char* src, unsigned char* dst){

@@ -58,7 +58,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                                    client_ip, sizeof(client_ip));
             printf("SERVER_CALLBACK_RECEIVE: ip %s name %s\n", client_ip, client_name);
             if(!receive_callback(wsi, server_received_payload,in,len,1)){
-                break;
+                return -1;
             }
             // search op
             char search[7];
@@ -135,6 +135,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 if (rest_result !=0){
                     unsigned char *real_write_back = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
                     if (rest_result > EXAMPLE_RX_BUFFER_BYTES){
+                        printf("Server chunks the packet\n");
                         memcpy(real_write_back,rest_buffer,EXAMPLE_RX_BUFFER_BYTES);
                         lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
                                   EXAMPLE_RX_BUFFER_BYTES,
