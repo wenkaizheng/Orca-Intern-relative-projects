@@ -32,11 +32,10 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
 
     switch( reason )
     {
-        case LWS_CALLBACK_HTTP:
-            //wsi_queue.push_back(wsi);
-            printf("%s->%s\n", "LWS_CALLBACK_HTTP", FRONT_END);
-            lws_serve_http_file( wsi, FRONT_END, "text/html", NULL, 0 );
+        case LWS_CALLBACK_HTTP: {
+            lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
             break;
+        }
         default:
             break;
     }
@@ -71,7 +70,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                     // today case
                     char* search_date = date_copy(current_time(),0);
                     sprintf(sql, "SELECT * FROM RECORD WHERE time LIKE '%c %s %c';", 37, search_date, 37);
-                    printf("%s",sql);
                     db_object.exec_db(sql,SELECT_SQL);
                     strcpy(server_received_payload->date,"today");
                     server_received_payload->cache_found = false;
@@ -146,7 +144,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                         lws_callback_on_writable(wsi);
                         break;
                     }else{
-                        printf("150th\n");
                         memcpy(real_write_back,rest_buffer,rest_result);
                         lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
                                   rest_result,
@@ -160,7 +157,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 std::vector<char *> search_queue;
                 if(server_received_payload -> cache_found ){
                     search_queue = db_object.get_cache();
-                    printf("163th %ld------\n",search_queue.size());
                 }
                 else{
                     search_queue = db_object.get_answer();
@@ -189,7 +185,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                            // set for next chunk
                            rest_buffer = strdup((char*)write_back);
                            rest_result = write_back_len;
-                           printf("190th %ld\n",rest_result);
                            bzero(real_write_back,EXAMPLE_RX_BUFFER_BYTES);
                            lws_callback_on_writable(wsi);
 
@@ -203,21 +198,22 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 if(server_received_payload->cache_found){
                     db_object.set_cache_empty();
                 }
-              //  printf("157th %s\n",server_received_payload->date);
                 if (!server_received_payload->cache_found) {
                     db_object.set_answer_empty(server_received_payload->date);
                 }
-                printf("156th\n");
             }
             else {
-                if (len>0) {
+                if(wsi_map.find(wsi)!=wsi_map.end()){
+                    // same ws (web socket)
                     // used ws cache sessions data directly
-                    printf("Server callback: %s-> %s", "LWS_CALLBACK_SERVER_WRITEABLE",
-                           &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]));
-                    lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
-                              server_received_payload->len,
-                              LWS_WRITE_TEXT);
-
+                    if(server_received_payload ->send) {
+                        printf("219th Server callback: %s-> %s\n", "LWS_CALLBACK_SERVER_WRITEABLE",
+                               &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]));
+                        lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
+                                  server_received_payload->len,
+                                  LWS_WRITE_TEXT);
+                        server_received_payload->send = false;
+                    }
                 }
                 else {
                     // http writeable

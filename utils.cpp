@@ -52,6 +52,7 @@ int receive_callback(struct lws *wsi, payload * received_payload, void* in, size
         memcpy(&(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]), in, len);
         received_payload->len = len;
         received_payload->data[LWS_SEND_BUFFER_PRE_PADDING + received_payload->len] = '\0';
+        received_payload->send = true;
         receive_callback_output(type, received_payload, len, fd);
         return 1;
     }

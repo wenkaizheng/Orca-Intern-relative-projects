@@ -35,6 +35,7 @@ typedef struct payload
     enum payload_op_type op;
     bool cache_found;
     char date[65];
+    bool send;
 } payload;
 
 char* current_time();
