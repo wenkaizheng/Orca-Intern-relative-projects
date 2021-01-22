@@ -11,6 +11,7 @@
 #define log "client_log.txt"
 #define  one_byte 1024
 #define EXAMPLE_RX_BUFFER_BYTES 1024*5
+extern char search_syms[7];
 enum client_protocols_type
 {
     WS_PROTOCOL_EXAMPLE,

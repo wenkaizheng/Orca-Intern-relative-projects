@@ -2,6 +2,7 @@
 // Created by wenkai on 1/4/21.
 //
 #include "utils.hpp"
+char search_syms[7] = {0x1,0x2,0x3,0x4,0x5,0x6,0x0};
 char* current_time(){
     time_t tt;
     struct tm* ti;
@@ -68,7 +69,7 @@ int receive_callback(struct lws *wsi, payload * received_payload, void* in, size
 int compare_op(char* src, unsigned char* dst){
     memcpy(src,dst,6);
     src[6] = '\0';
-    return strcmp(src,"search");
+    return strcmp(src,search_syms);
 }
 int compare_date(char* src, unsigned char* dst){
     memcpy(src,dst,5);

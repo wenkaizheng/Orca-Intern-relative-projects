@@ -180,9 +180,14 @@ int main(int argc, char* argv[]) {
         op = 1;
         char search[65];
         strcpy(search,argv[1]);
+        if(strcmp(search,"search")!=0){
+            fprintf(stderr,"We only accept search function for now\n");
+        }
+        memcpy(search,search_syms,7);
         strcat(search," ");
         strcat(search,argv[2]);
-        strcpy(search_record_name, search);
+        strcpy(search_record_name, argv[2]);
+
         for(int i =0; i< strlen(search_record_name); i++){
             if (search_record_name[i] == '/' ||search_record_name[i] == ' '){
                 search_record_name[i] = '_';
@@ -192,7 +197,6 @@ int main(int argc, char* argv[]) {
         delete_prev_log_file(search_record_name);
         fd = open(search_record_name, O_WRONLY | O_CREAT, 0644);
         dup2(fd,1) ;
-        printf("191th %d\n",fd);
         msg_queue.push_back(search);
         int count = 0;
         while(!search_flag) {
