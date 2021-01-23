@@ -213,9 +213,27 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 break;
 
         // when a client disconnect
-        case LWS_CALLBACK_CLOSED:
+        case LWS_CALLBACK_CLOSED: {
             printf("Client callback: %s\n", "LWS_CALLBACK_CLOSE");
+            char *name = wsi_map[wsi];
+            if (name == NULL){
+                break;
+            }
+            char *time = current_time();
+            char buff[EXAMPLE_RX_BUFFER_BYTES];
+            strcpy(buff, time);
+            strcat(buff,"From System: ");
+            strcat(buff, name);
+            strcat(buff, " just leave");
+            store_data.op = NORMAL_OP;
+            store_data.cache_found = false;
+            size_t len_buff = strlen(buff);
+            store_data.len = len_buff;
+            memcpy(&(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]), buff, len_buff);
             wsi_map.erase(wsi);
+            lws_callback_on_writable_all_protocol(lws_get_context(wsi), lws_get_protocol(wsi));
+            break;
+        }
         default:
             break;
     }
