@@ -10,13 +10,11 @@
 #include <pthread.h>
 static struct lws *web_socket = NULL;
 static struct lws_context *context = NULL;
-static pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static std::deque<char*> msg_queue;
 static bool flag = false;
 static char complete[129] = {0};
 static char sign[3] = ": ";
 static char search_record_name[65] = {0};
-static int slen;
 static int fd;
 static int op;
 static bool search_flag = false;
@@ -45,27 +43,12 @@ static int callback_example_client( struct lws *wsi, enum lws_callback_reasons r
             unsigned char *p = &buf[LWS_SEND_BUFFER_PRE_PADDING];
             char* msg = NULL;
             if(op == 0) {
-                pthread_mutex_lock(&mtx);
-                if (!msg_queue.empty()){
-                    msg = msg_queue.front();
-                    msg_queue.pop_front();
-                    memcpy(p,msg,strlen(msg));
-                    lws_write(wsi, p, strlen(msg), LWS_WRITE_TEXT);
-                    free(msg);
-                }
-                pthread_mutex_unlock(&mtx);
             }
             else {
                 strcat(complete, msg_queue.front());
                 msg_queue.pop_front();
                 memcpy(p,complete,strlen(complete));
                 lws_write(wsi, p, strlen(complete), LWS_WRITE_TEXT);
-            }
-            if(op == 0) {
-                client_received_payload->op = NORMAL_OP;
-            }
-            else{
-                client_received_payload->op = SEARCH_OP;
             }
             break;
         }
@@ -83,44 +66,13 @@ static int callback_example_client( struct lws *wsi, enum lws_callback_reasons r
             printf("Client callback: %s\n", "LWS_CALLBACK_CLIENT_CONNECTION_ERROR");
             web_socket = NULL;
             break;
-        case LWS_CALLBACK_EVENT_WAIT_CANCELLED:
-            // Interrupt Handler
-            lws_callback_on_writable(web_socket);
-            break;
         default:
             break;
     }
 
     return 0;
 }
-//define input thread in here
-void* read_input (void* vargp) {
-    char *line = NULL;
-    size_t len = 0;
-    ssize_t nread;
-    printf("Please type your message in here\n ");
-    while ((nread = getline(&line, &len, stdin)) != -1) {
-        line[nread - 1] = '\0';
-        if(strlen(line) > EXAMPLE_RX_BUFFER_BYTES){
-            printf("Don't send message larger than %d and type again\n",EXAMPLE_RX_BUFFER_BYTES);
-            continue;
-        }
-        char tmp[EXAMPLE_RX_BUFFER_BYTES + 65] = {0};
-        strcpy(tmp,current_time());
-        strcat(tmp,complete);
-        strcat(tmp, line);
-        pthread_mutex_lock(&mtx);
-        msg_queue.push_back(strdup(tmp));
-        pthread_mutex_unlock(&mtx);
-        // Interrupt event loop to add writeable
-        // give few second for receive thread
-        // because the input maybe come very fast
-        usleep(5000);
-        lws_cancel_service(context);
-        printf("Please type your message in here\n ");
-    }
-    return NULL;
-}
+
 void shutdown(int signo) {
     lws_context_destroy(context);
     close(fd);
@@ -139,7 +91,6 @@ static struct lws_protocols client_protocols[] =
 int main(int argc, char* argv[]) {
     delete_prev_log_file();
     signal(SIGINT, shutdown);
-    slen = strlen(argv[1]);
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
 
@@ -167,14 +118,6 @@ int main(int argc, char* argv[]) {
         lws_service(context,/* timeout_ms = */ 0);
     }
     if(argc == 2) {
-        fd = open("client_log.txt", O_WRONLY | O_CREAT | O_APPEND, 0644);
-        strcat(complete, argv[1]);
-        strcat(complete, sign);
-        op = 0;
-        pthread_create(&read_tid,NULL, read_input, NULL);
-        while(1){
-            lws_service(context,0);
-        }
     }
     else{
         op = 1;

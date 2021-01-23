@@ -176,6 +176,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 // move to the begin
                 write_back -=write_back_len;
                 if (write_back_len > EXAMPLE_RX_BUFFER_BYTES){
+                           printf("Server chunks the packet\n");
                            memcpy(real_write_back, write_back, EXAMPLE_RX_BUFFER_BYTES);
                            write_back += EXAMPLE_RX_BUFFER_BYTES;
                            write_back_len -= EXAMPLE_RX_BUFFER_BYTES;
@@ -203,25 +204,11 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 }
             }
             else {
-                if(wsi_map.find(wsi)!=wsi_map.end()){
-                    // same ws (web socket)
-                    // used ws cache sessions data directly
-                    if(server_received_payload ->send) {
-                        printf("219th Server callback: %s-> %s\n", "LWS_CALLBACK_SERVER_WRITEABLE",
-                               &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]));
-                        lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
-                                  server_received_payload->len,
-                                  LWS_WRITE_TEXT);
-                        server_received_payload->send = false;
-                    }
-                }
-                else {
-                    // http writeable
+
                     printf("Server callback: %s-> %s", "LWS_CALLBACK_SERVER_WRITEABLE",
                            &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]));
                     lws_write(wsi, &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]), store_data.len,
                               LWS_WRITE_TEXT);
-                }
             }
                 break;
 
