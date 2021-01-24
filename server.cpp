@@ -215,10 +215,11 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
         // when a client disconnect
         case LWS_CALLBACK_CLOSED: {
             printf("Client callback: %s\n", "LWS_CALLBACK_CLOSE");
-            char *name = wsi_map[wsi];
-            if (name == NULL){
+            std::map<struct lws*,char*>::iterator itr = wsi_map.find(wsi);
+            if (itr == wsi_map.end()){
                 break;
             }
+            char* name = itr->second;
             char *time = current_time();
             char buff[EXAMPLE_RX_BUFFER_BYTES];
             strcpy(buff, time);
