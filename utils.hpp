@@ -8,10 +8,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #define FRONT_END    "front_end.html"
-#define log "client_log.txt"
 #define  one_byte 1024
 #define EXAMPLE_RX_BUFFER_BYTES 1024*5
 extern char search_syms[7];
+extern char logs[32];
 enum client_protocols_type
 {
     WS_PROTOCOL_EXAMPLE,
@@ -45,5 +45,5 @@ int compare_date(char* src, unsigned char* dst);
 char* date_copy(char* original, int flag);
 void name_copy(char* name, char* message);
 void separate_data(unsigned char* data, char* time, char* real_data);
-void delete_prev_log_file(char* name = NULL);
+void delete_prev_log_file(char* name);
 #endif

@@ -19,7 +19,8 @@ static int fd;
 static int op;
 static bool search_flag = false;
 static pthread_t read_tid;
-
+// if the packet size is exactly fix network buffer, we will try to read at most 7 times.
+static int time_recv_packets = 0;
 static int callback_example_client( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len ) {
     payload *client_received_payload = (payload *) user;
     switch (reason) {
@@ -29,12 +30,13 @@ static int callback_example_client( struct lws *wsi, enum lws_callback_reasons r
 
         case LWS_CALLBACK_CLIENT_RECEIVE:    // recv data
         {
-           if (!receive_callback(wsi,client_received_payload,in,len,0,fd)){
-               break;
+           time_recv_packets += 1;
+           if (receive_callback(wsi,client_received_payload,in,len,0,fd)){
+               if(len != EXAMPLE_RX_BUFFER_BYTES){
+                   search_flag = true;
+               }
            }
-           if(op == 1){
-              search_flag = true;
-           }
+
            break;
         }
         case LWS_CALLBACK_CLIENT_WRITEABLE: //send data
@@ -89,7 +91,7 @@ static struct lws_protocols client_protocols[] =
                 { NULL, NULL, 0, 0 } /* terminator */
         };
 int main(int argc, char* argv[]) {
-    delete_prev_log_file();
+    delete_prev_log_file(logs);
     signal(SIGINT, shutdown);
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
@@ -142,11 +144,18 @@ int main(int argc, char* argv[]) {
         dup2(fd,1) ;
         msg_queue.push_back(search);
         int count = 0;
+        int time_prev_recv_packet = time_recv_packets;
         while(!search_flag) {
           if(count == 0) {
               lws_callback_on_writable(web_socket);
           }
           lws_service(context,/* timeout_ms = */ 0);
+          // exact size we assume no more packets
+          if (time_prev_recv_packet == time_recv_packets && count >= 7){
+              break;
+          }else{
+              time_prev_recv_packet = time_recv_packets;
+          }
           count ++;
         }
     }

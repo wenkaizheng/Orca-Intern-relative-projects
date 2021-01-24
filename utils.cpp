@@ -3,6 +3,7 @@
 //
 #include "utils.hpp"
 char search_syms[7] = {0x1,0x2,0x3,0x4,0x5,0x6,0x0};
+char logs[32] = "client_log.txt";
 char* current_time(){
     time_t tt;
     struct tm* ti;
@@ -154,15 +155,15 @@ void separate_data(unsigned  char* data, char* time, char* real_data){
 }
 void delete_prev_log_file(char* name) {
     bool remove_flag = false;
-    if (access(log, F_OK) != 0) {
+    if (access(name, F_OK) != 0) {
         return;
     }
     else{
-        if (name) {
+        if (strcmp(name,logs) != 0) {
             remove_flag = true;
         } else {
             struct stat st;
-            stat(log, &st);
+            stat(logs, &st);
             off_t size = st.st_size;
             if (size > one_byte) {
                 remove_flag = true;
@@ -170,8 +171,8 @@ void delete_prev_log_file(char* name) {
         }
     }
     if (remove_flag) {
-        if (remove(log) != 0) {
-            fprintf(stderr, "unable to delete log file in client side\n");
+        if (remove(name) != 0) {
+            fprintf(stderr, "unable to delete log file in client side %d\n",errno);
         }
     }
 
