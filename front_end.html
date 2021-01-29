@@ -155,6 +155,12 @@
         console.log("socket message: " + msg.data);
         update(msg.data,1);
     }
+    window.onbeforeunload = function (e){
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get("name");
+        const leave_msg = String.fromCharCode(11,12,13) + myParam;
+        socket.send(leave_msg);
+    }
     function openForm() {
         document.getElementById("myForm").style.display = "block";
     }
