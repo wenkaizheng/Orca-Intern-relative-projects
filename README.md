@@ -1,4 +1,4 @@
-# Orca intern relative project
+# Websocket-chat
 Using websocket protocol to write a Mini Chat APP\
 brew install libwebsockets\
 make\
@@ -10,4 +10,4 @@ Server side supports sqlite3 DataBase to store the chat record, if you want to
 check the record in one specific date, try the command above. Also note that server side is using LRU
 cache to save answer.
 
-For open the client side, please visit http://localhost:8000/?name=YOUR NAME.
+For open the client side, please visit http://localhost:8000/?name= YOUR NAME.
