@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <map>
+//#include <vector>
 #include <sqlite3.h>
 #include <pthread.h>
 #include <atomic>
@@ -26,6 +27,7 @@ char db_name[32] = "server_db";
 static db::DB db_object(db_name);
 static size_t rest_result = 0;
 static char* rest_buffer;
+static std::vector<char*> name_list;
 //static std::deque <char*> search_queue;
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
@@ -33,6 +35,15 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
     switch( reason )
     {
         case LWS_CALLBACK_HTTP: {
+            char name[65];
+            lws_get_urlarg_by_name(wsi,"name=",name,64);
+            printf("40th %ld\n",strlen(name+5));
+            std::vector<char *>::iterator itr = check_user_name(name+5,name_list);
+            if (itr != name_list.end()){
+                lws_serve_http_file(wsi, FRONT_END_500, "text/html", NULL, 0);
+                break;
+            }
+            name_list.push_back(strdup(name+5));
             lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
             break;
         }
@@ -62,6 +73,12 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             // search op
             char search[7];
             unsigned char* p = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
+            if (p[0]== 11 && p[1] ==12 && p[2]==13){
+                printf("77th %s\n",(char*)p+3);
+                std::vector<char*>::iterator itre = check_user_name((char*)p+3,name_list);
+                name_list.erase(itre);
+                break;
+            }
             if (compare_op(search,p) == 0){
                 server_received_payload->op = SEARCH_OP;
                 char date_buff[6];
@@ -99,21 +116,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             separate_data(p,time,real_data);
             char name[64];
             name_copy(name,real_data);
-            // found
-            if(wsi_map.find(wsi)!=wsi_map.end()){
-                 // same ws (web socket)
-            }
-            // not found
-            else{
-                std::map<struct lws*,char*>::iterator itr;
-                for (itr = wsi_map.begin(); itr != wsi_map.end(); ++itr) {
-                    // not allow the same id;
-                    if (strcmp(name,itr->second) == 0){
-                        return -1;
-                     }
-                }
-                wsi_map[wsi] = strdup(name);
-            }
+            wsi_map[wsi] = strdup(name);
             store_data = *server_received_payload;
             server_received_payload->op = NORMAL_OP;
             lws_callback_on_writable_all_protocol(lws_get_context(wsi), lws_get_protocol(wsi));

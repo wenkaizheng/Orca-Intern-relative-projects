@@ -177,3 +177,13 @@ void delete_prev_log_file(char* name) {
     }
 
 }
+std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>& name_list){
+    std::vector<char*>::iterator itr;
+    for (itr = name_list.begin(); itr !=name_list.end(); ++itr) {
+        // not allow the same id;
+        if (strcmp(user_name, *itr) == 0) {
+            return itr;
+        }
+    }
+    return itr;
+}
