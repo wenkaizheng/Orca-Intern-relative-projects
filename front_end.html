@@ -144,6 +144,9 @@
         }
     }
     socket.onopen = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get("name");
+        socket.send(String.fromCharCode(8,9,10) + myParam)
         console.log("socket open");
         update("open " + document.domain + ':' + location.port,0);
     }

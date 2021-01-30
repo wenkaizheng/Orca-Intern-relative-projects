@@ -10,9 +10,13 @@
 #include <vector>
 #define FRONT_END    "front_end.html"
 #define  FRONT_END_500 "front_end_500.html"
+#define FRONT_END_OWNER "front_end_owner.html"
 #define  one_byte 1024
 #define EXAMPLE_RX_BUFFER_BYTES 1024*5
 extern char search_syms[7];
+extern char first_msg[3];
+extern char remove_msg[3];
+extern char remove_msg_owner[3];
 extern char logs[32];
 enum client_protocols_type
 {

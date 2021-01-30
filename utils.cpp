@@ -3,6 +3,9 @@
 //
 #include "utils.hpp"
 char search_syms[7] = {0x1,0x2,0x3,0x4,0x5,0x6,0x0};
+char remove_msg[3] = {11,12,13};
+char first_msg[3] = {8,9,10};
+char remove_msg_owner[3] = {14,15,16};
 char logs[32] = "client_log.txt";
 char* current_time(){
     time_t tt;

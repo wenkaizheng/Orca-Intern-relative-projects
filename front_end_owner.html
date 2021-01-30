@@ -97,7 +97,7 @@
 
         <button type="button" class="btn" onclick="sendMessage()">Send</button>
         <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
-        <button type="button" class="btn remove" onclick="">Close</button>
+        <button type="button" class="btn remove" onclick="sendRemoveMessage()">Remove</button>
     </form>
 </div>
 
@@ -136,6 +136,12 @@
         socket.send(getDate() + myParam + ": " + inputVal);
         document.getElementById("myForm").getElementsByClassName("form-container")[0][0].value = "";
     }
+    function sendRemoveMessage(){
+        let person = prompt("Please enter your name", "Harry Potter");
+        const remove_msg = String.fromCharCode(14,15,16) + person;
+        socket.send(remove_msg);
+
+    }
     function update(msg,flag) {
         console.log(msg);
         const div_content = document.getElementById("num").innerHTML;
@@ -149,6 +155,9 @@
         }
     }
     socket.onopen = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get("name");
+        socket.send(String.fromCharCode(8,9,10) + myParam)
         console.log("socket open");
         update("open " + document.domain + ':' + location.port,0);
     }

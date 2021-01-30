@@ -28,7 +28,8 @@ static db::DB db_object(db_name);
 static size_t rest_result = 0;
 static char* rest_buffer;
 static std::vector<char*> name_list;
-//static std::deque <char*> search_queue;
+static int count = 0;
+static bool remove_flag = false;
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 
@@ -37,14 +38,18 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
         case LWS_CALLBACK_HTTP: {
             char name[65];
             lws_get_urlarg_by_name(wsi,"name=",name,64);
-            printf("40th %ld\n",strlen(name+5));
             std::vector<char *>::iterator itr = check_user_name(name+5,name_list);
             if (itr != name_list.end()){
                 lws_serve_http_file(wsi, FRONT_END_500, "text/html", NULL, 0);
                 break;
             }
             name_list.push_back(strdup(name+5));
-            lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
+            if (count == 0) {
+                lws_serve_http_file(wsi, FRONT_END_OWNER, "text/html", NULL, 0);
+            }else{
+                lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
+            }
+            count++;
             break;
         }
         default:
@@ -73,10 +78,31 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             // search op
             char search[7];
             unsigned char* p = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
-            if (p[0]== 11 && p[1] ==12 && p[2]==13){
-                printf("77th %s\n",(char*)p+3);
+            // first message to rece the name from user
+            if(p[0] == first_msg[0] && p[1] == first_msg[1] && p[2] == first_msg[2]){
+                wsi_map[wsi] = strdup((char*)p+3);
+                break;
+            }
+            // self remove
+            if (p[0]== remove_msg[0] && p[1] == remove_msg[1]  && p[2] == remove_msg[2]){
                 std::vector<char*>::iterator itre = check_user_name((char*)p+3,name_list);
                 name_list.erase(itre);
+                break;
+            }
+            // owner remove
+            if (p[0] == remove_msg_owner[0] && p[1] == remove_msg_owner[1] && p[2] == remove_msg_owner[2]){
+                std::map<struct lws*,char*>::iterator itr;
+                for (itr = wsi_map.begin(); itr != wsi_map.end(); ++itr) {
+                    // not allow the same id;
+                    printf("93th %s %s\n",p+3,itr->second);
+                    if (strcmp((char*)p+3,itr->second) == 0){
+                        std::vector<char*>::iterator itre = check_user_name((char*)p+3,name_list);
+                        name_list.erase(itre);
+                        lws_callback_on_writable(itr->first);
+                        remove_flag = true;
+                        break;
+                    }
+                }
                 break;
             }
             if (compare_op(search,p) == 0){
@@ -116,7 +142,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             separate_data(p,time,real_data);
             char name[64];
             name_copy(name,real_data);
-            wsi_map[wsi] = strdup(name);
             store_data = *server_received_payload;
             server_received_payload->op = NORMAL_OP;
             lws_callback_on_writable_all_protocol(lws_get_context(wsi), lws_get_protocol(wsi));
@@ -132,6 +157,10 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             break;
         }
         case LWS_CALLBACK_SERVER_WRITEABLE:
+            if (remove_flag){
+                remove_flag = false;
+                return -1;
+            }
             if (server_received_payload->op == SEARCH_OP) {
                 if (rest_result !=0){
                     unsigned char *real_write_back = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
