@@ -137,7 +137,7 @@
         document.getElementById("myForm").getElementsByClassName("form-container")[0][0].value = "";
     }
     function sendRemoveMessage(){
-        let person = prompt("Please enter your name", "Harry Potter");
+        let person = prompt("Please enter the name to remove", "Harry Potter");
         const remove_msg = String.fromCharCode(14,15,16) + person;
         socket.send(remove_msg);
 

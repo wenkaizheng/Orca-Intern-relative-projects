@@ -30,6 +30,7 @@ static char* rest_buffer;
 static std::vector<char*> name_list;
 static int count = 0;
 static bool remove_flag = false;
+static char owner[65];
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 
@@ -45,6 +46,7 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
             }
             name_list.push_back(strdup(name+5));
             if (count == 0) {
+                strcpy(owner,name+5);
                 lws_serve_http_file(wsi, FRONT_END_OWNER, "text/html", NULL, 0);
             }else{
                 lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
@@ -252,6 +254,10 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 break;
             }
             char* name = itr->second;
+            if (strcmp(name, owner) == 0){
+                bzero(owner,64);
+                count = 0;
+            }
             char *time = current_time();
             char buff[EXAMPLE_RX_BUFFER_BYTES];
             strcpy(buff, time);

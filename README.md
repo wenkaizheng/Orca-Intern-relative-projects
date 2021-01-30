@@ -11,3 +11,5 @@ check the record in one specific date, try the command above. Also note that ser
 cache to save answer.
 
 For open the client side, please visit http://localhost:8000/?name= YOUR NAME.
+The owner will have the right to remove other users, once the owner logout session, the newly connection
+user will become the owner
