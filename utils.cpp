@@ -6,6 +6,7 @@ char search_syms[7] = {0x1,0x2,0x3,0x4,0x5,0x6,0x0};
 char remove_msg[3] = {11,12,13};
 char first_msg[3] = {8,9,10};
 char remove_msg_owner[3] = {14,15,16};
+char owner_msg[3] = {19,20,21};
 char logs[32] = "client_log.txt";
 char* current_time(){
     time_t tt;
@@ -189,4 +190,14 @@ std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>
         }
     }
     return itr;
+}
+struct lws * check_user_wsi(char* user_name, std::map<struct lws *,char*> wsi_map){
+    std::map<struct lws *,char*>::iterator itr;
+    for (itr = wsi_map.begin(); itr !=wsi_map.end(); ++itr) {
+
+        if (strcmp(user_name, itr->second) == 0) {
+            return itr->first;
+        }
+    }
+    return NULL;
 }

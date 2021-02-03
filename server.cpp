@@ -5,7 +5,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <map>
+//#include <map>
 //#include <vector>
 #include <sqlite3.h>
 #include <pthread.h>
@@ -31,6 +31,8 @@ static std::vector<char*> name_list;
 static int count = 0;
 static bool remove_flag = false;
 static char owner[65];
+static bool new_owner_flag = false;
+static int check_loop = 0;
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 
@@ -107,6 +109,11 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 }
                 break;
             }
+            // get response from new owner
+            if(p[0] == owner_msg[0] && p[1] == owner_msg[1] && p[2] == owner_msg[2]){
+                new_owner_flag = false;
+                break;
+            }
             if (compare_op(search,p) == 0){
                 server_received_payload->op = SEARCH_OP;
                 char date_buff[6];
@@ -156,12 +163,28 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             data_queue.push_back(strdup(time));
             data_queue.push_back(strdup(real_data));
             pthread_mutex_unlock(&mtx);
+            check_loop +=1;
+            if (!check_loop % 5){
+                if (new_owner_flag){
+                    strcpy(owner,name_list[0]);
+                    struct lws* new_owner = check_user_wsi(name,wsi_map);
+                    lws_callback_on_writable(new_owner);
+                }
+            }
             break;
         }
         case LWS_CALLBACK_SERVER_WRITEABLE:
+            // use for closing by owner
             if (remove_flag){
                 remove_flag = false;
                 return -1;
+            }
+            if(new_owner_flag){
+                unsigned char *ask_owner = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
+                memcpy(ask_owner,owner_msg,3);
+                lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
+                          3,
+                          LWS_WRITE_TEXT);
             }
             if (server_received_payload->op == SEARCH_OP) {
                 if (rest_result !=0){
@@ -256,7 +279,16 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             char* name = itr->second;
             if (strcmp(name, owner) == 0){
                 bzero(owner,64);
-                count = 0;
+                if(name_list.size()>0){
+                    // second online user will becomes it
+                    strcpy(owner,name_list[0]);
+                    struct lws* new_owner = check_user_wsi(name,wsi_map);
+                    lws_callback_on_writable(new_owner);
+                    new_owner_flag = true;
+                }
+                else{
+                    count = 0;
+                }
             }
             char *time = current_time();
             char buff[EXAMPLE_RX_BUFFER_BYTES];

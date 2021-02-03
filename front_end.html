@@ -70,6 +70,11 @@
         .form-container .cancel {
             background-color: red;
         }
+        /* Add a red background color to the remove button */
+        .form-container .remove {
+            background-color: blue;
+            display: none;
+        }
 
         /* Add some hover effects to buttons */
         .form-container .btn:hover, .open-button:hover {
@@ -93,6 +98,7 @@
 
         <button type="button" class="btn" onclick="sendMessage()">Send</button>
         <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+        <button type="button" class="btn remove" onclick="sendRemoveMessage()">Remove</button>
     </form>
 </div>
 
@@ -129,7 +135,12 @@
         }
         console.log(myParam);
         socket.send(getDate() + myParam + ": " + inputVal);
-        document.getElementById("myForm").getElementsByClassName("form-container")[0][0].value = "";
+    }
+    function sendRemoveMessage(){
+        let person = prompt("Please enter the name to remove", "Harry Potter");
+        const remove_msg = String.fromCharCode(14,15,16) + person;
+        socket.send(remove_msg);
+
     }
     function update(msg,flag) {
         console.log(msg);
@@ -156,7 +167,13 @@
     }
     socket.onmessage = function(msg) {
         console.log("socket message: " + msg.data);
-        update(msg.data,1);
+        if (msg.data === String.fromCharCode(19,20,21)){
+            document.getElementById("myForm").getElementsByClassName("form-container")[0][3].style.display = "block";
+            socket.send(String.fromCharCode(19,20,21));
+        }
+        else {
+            update(msg.data, 1);
+        }
     }
     window.onbeforeunload = function (e){
         const urlParams = new URLSearchParams(window.location.search);

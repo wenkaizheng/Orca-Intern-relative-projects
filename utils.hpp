@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vector>
+#include <map>
 #define FRONT_END    "front_end.html"
 #define  FRONT_END_500 "front_end_500.html"
 #define FRONT_END_OWNER "front_end_owner.html"
@@ -18,6 +19,7 @@ extern char first_msg[3];
 extern char remove_msg[3];
 extern char remove_msg_owner[3];
 extern char logs[32];
+extern char owner_msg[3];
 enum client_protocols_type
 {
     WS_PROTOCOL_EXAMPLE,
@@ -53,4 +55,5 @@ void name_copy(char* name, char* message);
 void separate_data(unsigned char* data, char* time, char* real_data);
 void delete_prev_log_file(char* file_name);
 std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>& name_list);
+struct lws * check_user_wsi(char* user_name, std::map<struct lws *,char*> wsi_map);
 #endif
