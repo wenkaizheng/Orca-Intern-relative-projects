@@ -7,10 +7,10 @@ all: server client
 client: client.o utils.o
 	g++  $(DEBUG) $(CFLAGS) $(LDFLAGS)  client.o utils.o -o client
 
-server: server.o db.o
+server: server.o db.o utils.o
 	g++  $(DEBUG) $(CFLAGS) $(LDFLAGS)  server.o db.o utils.o -o server
 
-server.o: server.cpp utils.o
+server.o: server.cpp
 	g++  $(VER) -c server.cpp
 
 client.o: client.cpp
