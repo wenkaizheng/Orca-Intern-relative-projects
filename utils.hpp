@@ -6,7 +6,14 @@
 #include <libwebsockets.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h>
 #include <unistd.h>
+#include <signal.h>
+#include <sys/event.h>
+#include <arpa/inet.h>
+#include <iostream>
 #include <vector>
 #include <map>
 #define FRONT_END    "front_end.html"
@@ -56,4 +63,5 @@ void separate_data(unsigned char* data, char* time, char* real_data);
 void delete_prev_log_file(char* file_name);
 std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>& name_list);
 struct lws * check_user_wsi(char* user_name, std::map<struct lws *,char*> wsi_map);
+int find_port();
 #endif
