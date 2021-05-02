@@ -19,7 +19,7 @@ namespace db {
 
         int exec_db(char *sql, int sign);
 
-        int create_table(int sign);
+        int create_table(int sign, char* tb_name);
 
         std::vector<char*> get_answer();
 

@@ -124,12 +124,12 @@ namespace  db{
             return 1;
         }
     }
-    int db::DB::create_table(int sign){
-
-            char sql2[256] = "CREATE TABLE IF NOT EXISTS RECORD("  \
+    int db::DB::create_table(int sign, char* tb_name){
+            char sql2[256];
+            sprintf(sql2, "CREATE TABLE IF NOT EXISTS %s("  \
             "ID INTEGER PRIMARY KEY AUTOINCREMENT," \
             "TIME           TEXT    NOT NULL," \
-            "MESSAGE        CHAR(65));";
+            "MESSAGE        CHAR(65));",tb_name);
             return exec_db(sql2,sign);
 
     }
