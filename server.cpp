@@ -24,6 +24,7 @@ static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static bool db_get_lock_first = false;
 static std::deque<char*> data_queue;
 char db_name[32] = "server_db";
+char tb_name[32] ={0};
 static db::DB db_object(db_name);
 static size_t rest_result = 0;
 static char* rest_buffer;
@@ -121,7 +122,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 if (compare_date(date_buff,p+7) == 0){
                     // today case
                     char* search_date = date_copy(current_time(),0);
-                    sprintf(sql, "SELECT * FROM RECORD WHERE time LIKE '%c %s %c';", 37, search_date, 37);
+                    sprintf(sql, "SELECT * FROM %s WHERE time LIKE '%c %s %c';", tb_name,37, search_date, 37);
                     db_object.exec_db(sql,SELECT_SQL);
                     strcpy(server_received_payload->date,"today");
                     server_received_payload->cache_found = false;
@@ -131,7 +132,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 //char sql[128];
                 else {
                     if (!db_object.contains_cache(p+7)){
-                        sprintf(sql, "SELECT * FROM RECORD WHERE time LIKE '%c %s %c';", 37, p + 7, 37);
+                        sprintf(sql, "SELECT * FROM %s WHERE time LIKE '%c %s %c';",tb_name ,37, p + 7, 37);
                         db_object.exec_db(sql,SELECT_SQL);
                         strcpy(server_received_payload->date,(char*) p+7);
                         server_received_payload->cache_found = false;
@@ -340,7 +341,7 @@ static struct lws_protocols server_protocols[] =
         };
 void* db_thread(void* vargp) {
     db_object.open_db();
-    db_object.create_table(CREATE_TABLE);
+    db_object.create_table(CREATE_TABLE,tb_name);
     while (1) {
         // consumer
         pthread_mutex_lock(&mtx);
@@ -357,8 +358,8 @@ void* db_thread(void* vargp) {
 
         char sql[128];
         char* justified_time = date_copy(time,1);
-        sprintf(sql, "INSERT INTO RECORD (TIME,MESSAGE) "  \
-        "VALUES ('%s', '%s'); ", justified_time,data);
+        sprintf(sql, "INSERT INTO %s (TIME,MESSAGE) "  \
+        "VALUES ('%s', '%s'); ", tb_name,justified_time,data);
         db_object.exec_db(sql,INSERT_SQL);
         free(data);
         free(justified_time);
@@ -366,16 +367,17 @@ void* db_thread(void* vargp) {
     }
     return NULL;
 }
-int main()
+int main(int argc, char *argv[])
 {
     signal(SIGINT,shutdown);
     struct lws_context_creation_info info;
     memset( &info, 0, sizeof(info) );
 
-    info.port = 8000;
+    info.port = atoi(argv[1]);
     info.protocols = server_protocols;
     info.gid = -1;
     info.uid = -1;
+    strcpy(tb_name,argv[2]);
 
     context  = lws_create_context( &info );
     printf("websockets server starts at %d %p\n", info.port, context);
