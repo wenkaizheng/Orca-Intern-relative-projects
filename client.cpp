@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
         struct lws_client_connect_info ccinfo = {0};
         ccinfo.context = context;
         ccinfo.address = "localhost";
-        ccinfo.port = 8000;
+        ccinfo.port = atoi(argv[3]);
         ccinfo.path = "/";
         ccinfo.host = lws_canonical_hostname(context);
         ccinfo.origin = "origin";
