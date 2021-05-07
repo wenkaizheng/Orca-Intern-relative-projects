@@ -49,6 +49,7 @@ int main(int argc, char *argv[])
     kevent(kq, &ev_set, 1, NULL, 0, NULL);
     struct kevent evList[32];
     bool  flag = true;
+    bool write_already = false;
     while (flag) {
         // returns number of events
         int nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -61,9 +62,11 @@ int main(int argc, char *argv[])
                 printf("Disconnect\n");
                 close(fd);
                 // Socket is automatically removed from the kq by the kernel.
-            } else if (evList[i].filter == EVFILT_WRITE) {
-                //char send_msg[16];
-               // strcpy(send_msg,argv[1]);
+            }
+            else if (evList[i].filter == EVFILT_WRITE) {
+                if(write_already){
+                    continue;
+                }
                 char complete_msg[64] = {0};
                 char* time = current_time();
                 time[strlen(time)-1] = '\0';
@@ -75,19 +78,20 @@ int main(int argc, char *argv[])
                 strcat(complete_msg,argv[1]);
                 size_t bytes_write = write(fd, complete_msg, strlen(complete_msg));
                 printf("write %zu bytes %s\n", bytes_write, complete_msg);
+                write_already = true;
 
-            }
-            else if (fd == sockfd) {
+            } else if (evList[i].filter == EVFILT_READ) {
                 // Read from socket.
                 char buf[4];
                 size_t bytes_read = read(fd, buf, 4);
                 printf("read %zu bytes and please go to port %d\n", bytes_read, *((int*)buf));
                 flag = false;
-
-            } else if (evList[i].filter == EVFILT_READ) {
+            }else if (fd == sockfd) {
+                // never occurs
                 continue;
             }
         }
     }
+    close(sockfd);
     return 0;
 }
