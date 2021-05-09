@@ -5,8 +5,10 @@ make\
 ./server_t\
 ./client_t room_name will return the port_num you need to go\
 ./client search Jan/11/2021 port_num (request chat records on that day). And this command will create a file search_Jan/11/2021.txt in current working directory.\
-./client search today port_num will give you current records named today.txt.\
+./client search today port_num will give you current records named today.txt.
+
 client_t and server_t implementation use BSD kqueue only support in MacOs and Linux should use epoll (not implemented).\
+
 Server side supports sqlite3 DataBase to store the chat record, if you want to 
 check the record in one specific date, try the command above. Also note that server side is using LRU
 cache to save answer.
