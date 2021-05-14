@@ -14,6 +14,7 @@
 #include <sys/event.h>
 #include <arpa/inet.h>
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #define FRONT_END    "front_end.html"
@@ -27,6 +28,7 @@ extern char remove_msg[3];
 extern char remove_msg_owner[3];
 extern char logs[32];
 extern char owner_msg[3];
+extern char path[9];
 enum client_protocols_type
 {
     WS_PROTOCOL_EXAMPLE,
@@ -64,4 +66,7 @@ void delete_prev_log_file(char* file_name);
 std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>& name_list);
 struct lws * check_user_wsi(char* user_name, std::map<struct lws *,char*> wsi_map);
 int find_port();
+void write_log_file(char* port, char* tb_name, int flag);
+void run_child_process(int& count);
+char* get_port(char* room_name);
 #endif

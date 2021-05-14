@@ -2,12 +2,14 @@
 // Created by wenkai on 1/4/21.
 //
 #include "utils.hpp"
+using namespace std;
 char search_syms[7] = {0x1,0x2,0x3,0x4,0x5,0x6,0x0};
 char remove_msg[3] = {11,12,13};
 char first_msg[3] = {8,9,10};
 char remove_msg_owner[3] = {14,15,16};
 char owner_msg[3] = {19,20,21};
 char logs[32] = "client_log.txt";
+char path[9] = "./server";
 char* current_time(){
     time_t tt;
     struct tm* ti;
@@ -214,28 +216,97 @@ int find_port(){
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_addr.s_addr = INADDR_ANY;
     serv_addr.sin_port = 0;
-    if (bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+    if (::bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
         if(errno == EADDRINUSE) {
-            printf("the port is not available. already to other process\n");
+            fprintf(stderr,"the port is not available. already to other process\n");
             return -1;
         } else {
-            printf("could not bind to process (%d) %s\n", errno, strerror(errno));
+            fprintf(stderr,"could not bind to process (%d) %s\n", errno, strerror(errno));
             return -1;
         }
     }
-
     socklen_t len = sizeof(serv_addr);
     if (getsockname(sock, (struct sockaddr *)&serv_addr, &len) == -1) {
         perror("getsockname");
         return -1;
     }
+
     int rv = ntohs(serv_addr.sin_port);
     printf("port number %d\n", rv);
 
-
     if (close (sock) < 0 ) {
-        printf("did not close: %s\n", strerror(errno));
+        fprintf(stderr,"did not close: %s\n", strerror(errno));
         return -1;
     }
     return rv;
+}
+void write_log_file(char* port,char* name, int flag){
+    fstream new_file;
+    // open a file to perform write operation using file object
+    if (flag == 1) {
+        new_file.open("server_t.txt", ios::out);
+    }
+    else{
+        new_file.open("client_t.txt", ios::out);
+    }
+    if(new_file.is_open()) //checking whether the file is open
+    {
+        new_file<< port;   //inserting text
+        new_file<< ",";
+        new_file<< name;
+        new_file<< "\n";
+        new_file.close();    //close the file object
+    }
+}
+void run_child_process(int& count){
+    string delimiter = ",";
+    fstream new_file;
+    new_file.open("server_t.txt",ios::in); //open a file to perform read operation using file object
+    if (new_file.is_open()){   //checking whether the file is open
+        string s;
+        while(getline(new_file, s)){ //read data from file object and put it into string.
+            std::string token = s.substr(0, s.find(delimiter));
+            std::string tokens = s.substr(s.find(delimiter)+1);
+            char* port_arg = const_cast<char*>(token.c_str());
+            char* tb_name_arg = const_cast<char*>(tokens.c_str());
+            int fork_rv = fork();
+            if (fork_rv == 0){
+                // first argument port number
+                // second argument table name
+                char *argv[] = {path, port_arg, tb_name_arg, NULL};
+                int rv = execvp(path,argv);
+                if(rv == -1)
+                    fprintf(stderr,"execl error\n");
+                printf("104th\n running server already\n");
+                count += 1;
+            }else if (fork_rv == -1){
+                fprintf(stderr,"can't fork in line 99th\n");
+            }
+        }
+        new_file.close(); //close the file object.
+    }
+
+}
+char* get_port(char* room_name){
+    string delimiter = ",";
+    fstream new_file;
+    new_file.open("client_t.txt",ios::in); //open a file to perform read operation using file object
+    if (new_file.is_open()){   //checking whether the file is open
+        string s;
+        while(getline(new_file, s)){ //read data from file object and put it into string.
+            std::string token = s.substr(0, s.find(delimiter));
+            std::string tokens = s.substr(s.find(delimiter)+1);
+            char* port_arg = const_cast<char*>(token.c_str());
+            char* log_room_name = const_cast<char*>(tokens.c_str());
+            if (strcmp(room_name,log_room_name) == 0){
+                return strdup(port_arg);
+            }
+
+        }
+        new_file.close(); //close the file object.
+        return NULL;
+    }
+    return NULL;
+
+
 }
