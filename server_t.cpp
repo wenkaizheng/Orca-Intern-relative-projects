@@ -5,13 +5,13 @@
 #define PORT 8888
 #define SA struct sockaddr
 #include "utils.hpp"
+#include "db.hpp"
 static std::map<int, char*> collector;
 static int sockfd;
 static int count = 0;
-char path[9] = "./server";
 void shutdown(int signo){
     // todo close socket in here
-    printf("server_t exists in here\n");
+    printf("server_t exists in here %d\n",count);
     close(sockfd);
     for (int i = 0; i<count; i++){
         wait(NULL);
@@ -21,6 +21,7 @@ void shutdown(int signo){
 int main(int argc, char *argv[])
 {
     signal(SIGINT,shutdown);
+    run_child_process(count);
     int len;
     struct sockaddr_in servaddr, cli;
 
@@ -55,6 +56,11 @@ int main(int argc, char *argv[])
     else
         printf("Server listening..\n");
     len = sizeof(cli);
+
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    assert(flags >= 0);
+    fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+
     int kq = kqueue();
     struct kevent ev_set;
 
@@ -62,7 +68,6 @@ int main(int argc, char *argv[])
     assert(-1 != kevent(kq, &ev_set, 1, NULL, 0, NULL));
 
     struct kevent evList[32];
-    int count = 0;
     while (1) {
         // returns number of events
         int nev = kevent(kq, NULL, 0, evList, 32, NULL);
@@ -96,31 +101,34 @@ int main(int argc, char *argv[])
             } else if (evList[i].filter == EVFILT_READ) {
                 count += 1;
                 // Read from socket.
-                char buf[64] ={0};
-                size_t bytes_read = read(fd, buf, 63);
-                printf("read %zu bytes %s\n", bytes_read,buf);
+                char tb_name_arg[64] ={0};
+                size_t bytes_read = read(fd, tb_name_arg, 63);
+                printf("read %zu bytes %s\n", bytes_read,tb_name_arg);
                 int port_number = find_port();
-                char buffer[50];
-                sprintf(buffer,"%d",port_number);
-                char port[4];
+                if (port_number == -1){
+                    fprintf(stderr,"can't find a port\n");
+                    exit(1);
+                }
+                char port_arg[6];
+                sprintf(port_arg,"%d",port_number);
+                char* port = (char*)malloc(sizeof(char)*4);
                 memcpy(port,&port_number,4);
-                collector[fd] = strdup(port);
+                collector[fd] = port;
                 int fork_rv = fork();
                 if (fork_rv == 0){
                     // first argument port number
                     // second argument table name
-                    printf("%s\n",buf);
-                    char *argv[] = {path, buffer, buf, NULL};
-                    int rv = execvp("./server",argv);
+                    printf("%s\n",tb_name_arg);
+                    write_log_file(port_arg,tb_name_arg,1);
+                    char *argv[] = {path, port_arg, tb_name_arg, NULL};
+                    int rv = execvp(path,argv);
                     if(rv == -1)
-                        perror("execl error");
-                    printf("104th\n running server already\n");
+                        fprintf(stderr,"execl error\n");
                 }else if (fork_rv == -1){
-                    perror("can't fork in line 99th\n");
+                    fprintf(stderr,"can't fork in line 131th\n");
                 }
 
             } else if (evList[i].filter == EVFILT_WRITE) {
-                //printf("101th %d\n",fd);
                 if (collector.find(fd) != collector.end()) {
                     size_t bytes_write = write(fd, collector[fd], 4);
                     printf("write %zu bytes %d\n", bytes_write, *((int*)collector[fd]));
