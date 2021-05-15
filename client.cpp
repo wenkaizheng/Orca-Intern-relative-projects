@@ -108,12 +108,18 @@ int main(int argc, char* argv[]) {
         struct lws_client_connect_info ccinfo = {0};
         ccinfo.context = context;
         ccinfo.address = "localhost";
-        ccinfo.port = atoi(argv[3]);
+        char* port = get_port(argv[3]);
+        if (!port){
+            fprintf(stderr,"Permission Denied\n");
+            exit(1);
+        }
+        ccinfo.port = atoi(port);
         ccinfo.path = "/";
         ccinfo.host = lws_canonical_hostname(context);
         ccinfo.origin = "origin";
         ccinfo.protocol = client_protocols[WS_PROTOCOL_EXAMPLE].name;
         web_socket = lws_client_connect_via_info(&ccinfo);
+        free(port);
     }
     // printf("114th %p\n",context);
     while (!flag) {
