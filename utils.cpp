@@ -244,10 +244,10 @@ void write_log_file(char* port,char* name, int flag){
     fstream new_file;
     // open a file to perform write operation using file object
     if (flag == 1) {
-        new_file.open("server_t.txt", ios::out);
+        new_file.open("server_t.txt", ios::app);
     }
     else{
-        new_file.open("client_t.txt", ios::out);
+        new_file.open("client_t.txt", ios::app);
     }
     if(new_file.is_open()) //checking whether the file is open
     {
@@ -291,6 +291,7 @@ char* get_port(char* room_name){
     string delimiter = ",";
     fstream new_file;
     new_file.open("client_t.txt",ios::in); //open a file to perform read operation using file object
+    std::map<int, char*> rv;
     if (new_file.is_open()){   //checking whether the file is open
         string s;
         while(getline(new_file, s)){ //read data from file object and put it into string.
@@ -299,9 +300,16 @@ char* get_port(char* room_name){
             char* port_arg = const_cast<char*>(token.c_str());
             char* log_room_name = const_cast<char*>(tokens.c_str());
             if (strcmp(room_name,log_room_name) == 0){
-                return strdup(port_arg);
+                rv[atoi(port_arg)] = strdup(port_arg);
             }
-
+        }
+        if (rv.size() == 1){
+            return rv.begin()->second;
+        }else{
+            int port_num;
+            cout << "Duplicate room name, and please enter the port number\n";
+            cin >> port_num;
+            return rv[port_num];
         }
         new_file.close(); //close the file object.
         return NULL;
