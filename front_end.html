@@ -135,6 +135,7 @@
         }
         console.log(myParam);
         socket.send(getDate() + myParam + ": " + inputVal);
+        document.getElementById("myForm").getElementsByClassName("form-container")[0][0].value = "";
     }
     function sendRemoveMessage(){
         let person = prompt("Please enter the name to remove", "Harry Potter");
