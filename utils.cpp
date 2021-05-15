@@ -275,15 +275,16 @@ void run_child_process(int& count){
                 // second argument table name
                 char *argv[] = {path, port_arg, tb_name_arg, NULL};
                 int rv = execvp(path,argv);
-                if(rv == -1)
-                    fprintf(stderr,"execl error\n");
-                printf("104th\n running server already\n");
-                count += 1;
+                if(rv == -1) {
+                    fprintf(stderr, "execl error\n");
+                }
             }else if (fork_rv == -1){
                 fprintf(stderr,"can't fork in line 99th\n");
             }
+            count += 1;
         }
         new_file.close(); //close the file object.
+        printf("287th %d\n", count);
     }
 
 }
