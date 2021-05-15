@@ -5,7 +5,6 @@
 #define PORT 8888
 #define SA struct sockaddr
 #include "utils.hpp"
-#include "db.hpp"
 static std::map<int, char*> collector;
 static int sockfd;
 static int count = 0;
