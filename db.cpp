@@ -112,17 +112,22 @@ namespace  db{
     }
 
     int db::DB::exec_db(char *sql, int sign) {
-        int rc = sqlite3_exec(db, sql, callback_db, 0, &zErrMsg);
-        if( rc ) {
-            fprintf(stderr, "SQL ERROR %s: %s\n", operation[sign],sqlite3_errmsg(db));
-            return 0;
-        } else {
-            fprintf(stdout, "SQL command %s executes successfully\n", operation[sign]);
-            if (answers.empty() && sign == 4){
-                answers.push_back(strdup("NO RECORD ON THAT DAY"));
-            }
-            return 1;
-        }
+      do {
+          int rc = sqlite3_exec(db, sql, callback_db, 0, &zErrMsg);
+          if (rc == SQLITE_BUSY) {
+              continue;
+          }
+          if (rc) {
+              fprintf(stderr, "SQL ERROR %s: %s\n", operation[sign], sqlite3_errmsg(db));
+              return 0;
+          } else {
+              fprintf(stdout, "SQL command %s executes successfully\n", operation[sign]);
+              if (answers.empty() && sign == 4) {
+                  answers.push_back(strdup("NO RECORD ON THAT DAY"));
+              }
+              return 1;
+          }
+      }while(1);
     }
     int db::DB::create_table(int sign, char* tb_name){
             char sql2[256];
@@ -142,6 +147,7 @@ namespace  db{
         operation[2] = "insert sql";
         operation[3] = "delete sql";
         operation[4] = "select sql";
+        operation[5] = "wal";
     }
 
     db::DB::~DB() {}

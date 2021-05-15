@@ -40,7 +40,7 @@ namespace db {
         sqlite3 *db;
         char *zErrMsg;
         char db_name[32];
-        const char* operation [5];
+        const char* operation [6];
     };
 }
 #endif
