@@ -34,6 +34,7 @@ static bool remove_flag = false;
 static char owner[65];
 static bool new_owner_flag = false;
 static int check_loop = 0;
+static char wal[64] = "PRAGMA journal_mode=WAL;";
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
 
@@ -341,6 +342,7 @@ static struct lws_protocols server_protocols[] =
         };
 void* db_thread(void* vargp) {
     db_object.open_db();
+    db_object.exec_db(wal,5);
     db_object.create_table(CREATE_TABLE,tb_name);
     while (1) {
         // consumer
