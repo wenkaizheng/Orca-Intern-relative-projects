@@ -85,6 +85,9 @@ int main(int argc, char *argv[])
                 char buf[4];
                 size_t bytes_read = read(fd, buf, 4);
                 printf("read %zu bytes and please go to port %d\n", bytes_read, *((int*)buf));
+                char port_arg[6];
+                sprintf(port_arg,"%d",*((int*)buf));
+                write_log_file(port_arg,argv[1],2);
                 flag = false;
             }else if (fd == sockfd) {
                 // never occurs
