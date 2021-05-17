@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     while (1) {
         // returns number of events
         int nev = kevent(kq, NULL, 0, evList, 32, NULL);
-        //printf("kqueue got %d events\n", nev);
+        printf("kqueue got %d events\n", nev);
 
         for (int i = 0; i < nev; i++) {
             int fd = (int)evList[i].ident;
@@ -93,9 +93,6 @@ int main(int argc, char *argv[])
                 kevent(kq, &ev_set, 1, NULL, 0, NULL);
                 printf("Got connection!\n");
 
-                // register to write
-                EV_SET(&ev_set, connfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                kevent(kq, &ev_set, 1, NULL, 0, NULL);
 
             } else if (evList[i].filter == EVFILT_READ) {
                 count += 1;
@@ -126,6 +123,13 @@ int main(int argc, char *argv[])
                 }else if (fork_rv == -1){
                     fprintf(stderr,"can't fork in line 131th\n");
                 }
+                // register to write
+                EV_SET(&ev_set, fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+                kevent(kq, &ev_set, 1, NULL, 0, NULL);
+
+                // unregister to read
+                EV_SET(&ev_set, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                kevent(kq, &ev_set, 1, NULL, 0, NULL);
 
             } else if (evList[i].filter == EVFILT_WRITE) {
                 if (collector.find(fd) != collector.end()) {
@@ -134,8 +138,15 @@ int main(int argc, char *argv[])
                     free(collector[fd]);
                     collector.erase(fd);
                 }else{
-                    continue;
+                   // do nothing
                 }
+                // register to read
+                EV_SET(&ev_set, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                kevent(kq, &ev_set, 1, NULL, 0, NULL);
+
+                // unregister to write
+                EV_SET(&ev_set, fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+                kevent(kq, &ev_set, 1, NULL, 0, NULL);
             }
         }
     }
