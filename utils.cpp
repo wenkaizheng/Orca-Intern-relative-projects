@@ -304,6 +304,7 @@ char* get_port(char* room_name){
                 rv[atoi(port_arg)] = strdup(port_arg);
             }
         }
+        new_file.close(); //close the file object.
         if (rv.size() == 1){
             return rv.begin()->second;
         }else{
@@ -312,8 +313,6 @@ char* get_port(char* room_name){
             cin >> port_num;
             return rv[port_num];
         }
-        new_file.close(); //close the file object.
-        return NULL;
     }
     return NULL;
 
