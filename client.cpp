@@ -91,7 +91,6 @@ static struct lws_protocols client_protocols[] =
                 { NULL, NULL, 0, 0 } /* terminator */
         };
 int main(int argc, char* argv[]) {
-    delete_prev_log_file(logs);
     signal(SIGINT, shutdown);
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
