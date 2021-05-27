@@ -43,14 +43,14 @@ static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, voi
         case LWS_CALLBACK_HTTP: {
             char name[65];
             lws_get_urlarg_by_name(wsi,"name=",name,64);
-            std::vector<char *>::iterator itr = check_user_name(name+5,name_list);
+            std::vector<char *>::iterator itr = check_user_name(name,name_list);
             if (itr != name_list.end()){
                 lws_serve_http_file(wsi, FRONT_END_500, "text/html", NULL, 0);
                 break;
             }
-            name_list.push_back(strdup(name+5));
+            name_list.push_back(strdup(name));
             if (count == 0) {
-                strcpy(owner,name+5);
+                strcpy(owner,name);
                 lws_serve_http_file(wsi, FRONT_END_OWNER, "text/html", NULL, 0);
             }else{
                 lws_serve_http_file(wsi, FRONT_END, "text/html", NULL, 0);
