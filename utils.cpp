@@ -40,17 +40,10 @@ static void receive_callback_output(int type, payload * received_payload, size_t
                &(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]), len);
     }
     else {
-        if (received_payload->op == SEARCH_OP){
-            printf("%s\n",
-                   &(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]));
 
-        }
-        else {
             char buff[EXAMPLE_RX_BUFFER_BYTES + 1] = {0};
             strcat(buff,(char*) &(received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]));
-            strcat(buff,"\n");
             write_complete(fd,buff,strlen(buff));
-        }
     }
 }
 
@@ -143,9 +136,11 @@ void separate_data(unsigned  char* data, char* time, char* real_data){
     size_t time_pointer = 0;
     size_t real_data_pointer = 0;
     bool time_finish = false;
+    bool first_new_line = true;
     for(int i = 0 ;data[i]!= '\0';i++){
-        if(data[i] == '\n'){
+        if(data[i] == '\n' && first_new_line ){
             time_finish = true;
+            first_new_line = false;
         }
         else{
             if (time_finish){
@@ -191,6 +186,7 @@ std::vector<char*>::iterator check_user_name(char* user_name, std::vector<char*>
             return itr;
         }
     }
+    printf("195th\n");
     return itr;
 }
 struct lws * check_user_wsi(char* user_name, std::map<struct lws *,char*> wsi_map){
