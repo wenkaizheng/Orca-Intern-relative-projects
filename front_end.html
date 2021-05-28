@@ -147,9 +147,16 @@
         console.log(msg);
         const div_content = document.getElementById("num").innerHTML;
         if (flag === 1) {
-            const time = msg.split("\n")[0];
-            const data = msg.split('\n')[1];
-            document.getElementById("num").innerHTML = div_content + time + "</br>" + data + "</br>" + "</br>";
+            const data_list = msg.split("\n");
+            const time = data_list[0];
+            let data = "";
+            // 148 words each line
+            for (let i =1; i<data_list.length;i++){
+                for(let j=0; j<data_list[i].length;j+=148){
+                    data += data_list[i].slice(j,j+148) + "</br>";
+                }
+            }
+            document.getElementById("num").innerHTML = div_content + time + "</br>" + data  + "</br>";
         }
         else if (flag ===0){
             document.getElementById("num").innerHTML = div_content + msg + "</br>" + "</br>";
