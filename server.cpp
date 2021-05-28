@@ -5,8 +5,6 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
-//#include <map>
-//#include <vector>
 #include <sqlite3.h>
 #include <pthread.h>
 #include <atomic>
@@ -27,7 +25,8 @@ char db_name[32] = "server_db";
 char tb_name[32] ={0};
 static db::DB db_object(db_name);
 static size_t rest_result = 0;
-static char* rest_buffer;
+static std::string rest_buffer;
+static int start_index = 0;
 static std::vector<char*> name_list;
 static int count = 0;
 static bool remove_flag = false;
@@ -99,7 +98,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             if (p[0] == remove_msg_owner[0] && p[1] == remove_msg_owner[1] && p[2] == remove_msg_owner[2]){
                 std::map<struct lws*,char*>::iterator itr;
                 for (itr = wsi_map.begin(); itr != wsi_map.end(); ++itr) {
-                    // not allow the same id;
                     printf("93th %s %s\n",p+3,itr->second);
                     if (strcmp((char*)p+3,itr->second) == 0){
                         std::vector<char*>::iterator itre = check_user_name((char*)p+3,name_list);
@@ -193,23 +191,23 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                     unsigned char *real_write_back = &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]);
                     if (rest_result > EXAMPLE_RX_BUFFER_BYTES){
                         printf("Server chunks the packet\n");
-                        memcpy(real_write_back,rest_buffer,EXAMPLE_RX_BUFFER_BYTES);
+                        memcpy(real_write_back,rest_buffer.c_str() + start_index,EXAMPLE_RX_BUFFER_BYTES);
                         lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
                                   EXAMPLE_RX_BUFFER_BYTES,
                                   LWS_WRITE_TEXT);
                         rest_result -= EXAMPLE_RX_BUFFER_BYTES;
-                        rest_buffer += EXAMPLE_RX_BUFFER_BYTES;
+                        start_index += EXAMPLE_RX_BUFFER_BYTES;
                         bzero(real_write_back,EXAMPLE_RX_BUFFER_BYTES);
                         lws_callback_on_writable(wsi);
                         break;
                     }else{
-                        memcpy(real_write_back,rest_buffer,rest_result);
+                        memcpy(real_write_back,rest_buffer.c_str() + start_index,rest_result);
                         lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
                                   rest_result,
                                   LWS_WRITE_TEXT);
                         bzero(real_write_back,rest_result);
                         rest_result = 0;
-                        free(rest_buffer);
+                        start_index = 0;
                         break;
                     }
                 }
@@ -235,7 +233,7 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 // move to the begin
                 write_back -=write_back_len;
                 if (write_back_len > EXAMPLE_RX_BUFFER_BYTES){
-                           printf("Server chunks the packet\n");
+                           printf("Server chunks the packet firstly\n");
                            memcpy(real_write_back, write_back, EXAMPLE_RX_BUFFER_BYTES);
                            write_back += EXAMPLE_RX_BUFFER_BYTES;
                            write_back_len -= EXAMPLE_RX_BUFFER_BYTES;
@@ -243,7 +241,8 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                                      EXAMPLE_RX_BUFFER_BYTES,
                                      LWS_WRITE_TEXT);
                            // set for next chunk
-                           rest_buffer = strdup((char*)write_back);
+                           std::string tmp_str(reinterpret_cast<char*> (write_back));
+                           rest_buffer = tmp_str;
                            rest_result = write_back_len;
                            bzero(real_write_back,EXAMPLE_RX_BUFFER_BYTES);
                            lws_callback_on_writable(wsi);
@@ -358,10 +357,11 @@ void* db_thread(void* vargp) {
         db_get_lock_first = false;
         pthread_mutex_unlock(&mtx);
 
-        char sql[128];
+        char sql[EXAMPLE_RX_BUFFER_BYTES + 128];
         char* justified_time = date_copy(time,1);
         sprintf(sql, "INSERT INTO %s (TIME,MESSAGE) "  \
         "VALUES ('%s', '%s'); ", tb_name,justified_time,data);
+        printf("%s\n",sql);
         db_object.exec_db(sql,INSERT_SQL);
         free(data);
         free(justified_time);
