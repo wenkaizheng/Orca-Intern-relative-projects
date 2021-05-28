@@ -79,7 +79,7 @@ namespace  db{
             if (i % 4 == 0){
                 continue;
             }
-            char result[128] = {0};
+            char result[1024*5+1] = {0};
             //printf("-----------    %s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
             sprintf(result,"%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
             char* tmp = strdup(result);
