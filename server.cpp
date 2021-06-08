@@ -32,7 +32,6 @@ static int count = 0;
 static bool remove_flag = false;
 static char owner[65];
 static bool new_owner_flag = false;
-static int check_loop = 0;
 static char wal[64] = "PRAGMA journal_mode=WAL;";
 static int callback_http( struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len )
 {
@@ -163,14 +162,6 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             data_queue.push_back(strdup(time));
             data_queue.push_back(strdup(real_data));
             pthread_mutex_unlock(&mtx);
-            check_loop +=1;
-            if (!check_loop % 5){
-                if (new_owner_flag){
-                    strcpy(owner,name_list[0]);
-                    struct lws* new_owner = check_user_wsi(name,wsi_map);
-                    lws_callback_on_writable(new_owner);
-                }
-            }
             break;
         }
         case LWS_CALLBACK_SERVER_WRITEABLE:
