@@ -12,7 +12,7 @@
 #include "db.hpp"
 #include "utils.hpp"
 
-static payload store_data;
+static  std::deque<payload> store_data_queue;
 static int fd;
 static pthread_t db_tid;
 static struct lws_context *context;
@@ -126,8 +126,8 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                     server_received_payload->cache_found = false;
                     free(search_date);
                 }
-                // Jan/9/2021
-                //char sql[128];
+                    // Jan/9/2021
+                    //char sql[128];
                 else {
                     if (!db_object.contains_cache(p+7)){
                         sprintf(sql, "SELECT * FROM %s WHERE time LIKE '%c %s %c';",tb_name ,37, p + 7, 37);
@@ -150,7 +150,8 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             separate_data(p,time,real_data);
             char name[64];
             name_copy(name,real_data);
-            store_data = *server_received_payload;
+            server_received_payload->ttl = name_list.size();
+            store_data_queue.push_back(*server_received_payload);
             server_received_payload->op = NORMAL_OP;
             lws_callback_on_writable_all_protocol(lws_get_context(wsi), lws_get_protocol(wsi));
             // producer
@@ -224,19 +225,19 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 // move to the begin
                 write_back -=write_back_len;
                 if (write_back_len > EXAMPLE_RX_BUFFER_BYTES){
-                           printf("Server chunks the packet firstly\n");
-                           memcpy(real_write_back, write_back, EXAMPLE_RX_BUFFER_BYTES);
-                           write_back += EXAMPLE_RX_BUFFER_BYTES;
-                           write_back_len -= EXAMPLE_RX_BUFFER_BYTES;
-                           lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
-                                     EXAMPLE_RX_BUFFER_BYTES,
-                                     LWS_WRITE_TEXT);
-                           // set for next chunk
-                           std::string tmp_str(reinterpret_cast<char*> (write_back));
-                           rest_buffer = tmp_str;
-                           rest_result = write_back_len;
-                           bzero(real_write_back,EXAMPLE_RX_BUFFER_BYTES);
-                           lws_callback_on_writable(wsi);
+                    printf("Server chunks the packet firstly\n");
+                    memcpy(real_write_back, write_back, EXAMPLE_RX_BUFFER_BYTES);
+                    write_back += EXAMPLE_RX_BUFFER_BYTES;
+                    write_back_len -= EXAMPLE_RX_BUFFER_BYTES;
+                    lws_write(wsi, &(server_received_payload->data[LWS_SEND_BUFFER_PRE_PADDING]),
+                              EXAMPLE_RX_BUFFER_BYTES,
+                              LWS_WRITE_TEXT);
+                    // set for next chunk
+                    std::string tmp_str(reinterpret_cast<char*> (write_back));
+                    rest_buffer = tmp_str;
+                    rest_result = write_back_len;
+                    bzero(real_write_back,EXAMPLE_RX_BUFFER_BYTES);
+                    lws_callback_on_writable(wsi);
 
                 }
                 else {
@@ -253,15 +254,19 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
                 }
             }
             else {
-
-                    printf("Server callback: %s-> %s", "LWS_CALLBACK_SERVER_WRITEABLE",
-                           &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]));
-                    lws_write(wsi, &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]), store_data.len,
-                              LWS_WRITE_TEXT);
+                store_data_queue.front().ttl -=1;
+                payload store_data = store_data_queue.front();
+                if (store_data.ttl == 0){
+                    store_data_queue.pop_front();
+                }
+                printf("!!!Server callback: %s-> %s", "LWS_CALLBACK_SERVER_WRITEABLE",
+                       &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]));
+                lws_write(wsi, &(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]), store_data.len,
+                          LWS_WRITE_TEXT);
             }
-                break;
+            break;
 
-        // when a client disconnect
+            // when a client disconnect
         case LWS_CALLBACK_CLOSED: {
             printf("Client callback: %s\n", "LWS_CALLBACK_CLOSE");
             std::map<struct lws*,char*>::iterator itr = wsi_map.find(wsi);
@@ -288,11 +293,14 @@ static int callback_example_server( struct lws *wsi, enum lws_callback_reasons r
             strcat(buff,"From System: ");
             strcat(buff, name);
             strcat(buff, " just leave");
+            payload store_data;
             store_data.op = NORMAL_OP;
+            store_data.ttl = name_list.size();
             store_data.cache_found = false;
             size_t len_buff = strlen(buff);
             store_data.len = len_buff;
             memcpy(&(store_data.data[LWS_SEND_BUFFER_PRE_PADDING]), buff, len_buff);
+            store_data_queue.push_back(store_data);
             wsi_map.erase(wsi);
             lws_callback_on_writable_all_protocol(lws_get_context(wsi), lws_get_protocol(wsi));
             break;
